@@ -20,7 +20,7 @@ export interface IUiControlsWebPartProps {
 export default class UiControlsWebPart extends BaseClientSideWebPart<IUiControlsWebPartProps> {
 
   public onInit(): Promise<void> {
-    let cssURL = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css";
+    let cssURL = "https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/9.6.1/css/fabric.min.css";
     SPComponentLoader.loadCss(cssURL);
     return Promise.resolve<void>();
   }
