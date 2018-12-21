@@ -11,7 +11,7 @@ import * as strings from 'UiControlsWebPartStrings';
 import UiControls from './components/UiControls';
 import { IUiControlsProps } from './components/IUiControlsProps';
 import { SPComponentLoader } from '@microsoft/sp-loader';
-
+import { sp, Web } from "@pnp/sp";
 
 export interface IUiControlsWebPartProps {
   description: string;
@@ -22,6 +22,11 @@ export default class UiControlsWebPart extends BaseClientSideWebPart<IUiControls
   public onInit(): Promise<void> {
     let cssURL = "https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/9.6.1/css/fabric.min.css";
     SPComponentLoader.loadCss(cssURL);
+
+    sp.setup({
+      spfxContext: this.context
+    });
+
     return Promise.resolve<void>();
   }
 

@@ -1,39 +1,113 @@
 import * as React from 'react';
 import styles from './UiControls.module.scss';
-import { IUiControlsProps } from './IUiControlsProps';
+import { IUiControlsProps, IDemoItem, IDrpItem } from './IUiControlsProps';
+import { IUiControlsState, IUserItem, IDetailsListDemoExampleState } from './IUiControlsState';
+
 import { escape } from '@microsoft/sp-lodash-subset';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
-import { DefaultButton, TextField, Dropdown, IDropdown, DropdownMenuItemType, IDropdownOption, BaseComponent } from 'office-ui-fabric-react';
+import {
+  DefaultButton, TextField, Dropdown, IDropdown, DropdownMenuItemType, IDropdownOption, BaseComponent,
+  DetailsList, DetailsListLayoutMode, Selection, SelectionMode, IColumn
+} from 'office-ui-fabric-react';
+import { sp, Web } from "@pnp/sp";
 
 
-export interface IUiControlsState {
-  PeopickerItems: IUserItem[];
-  Title: string;
-  selectedItem?: { key: string | number | undefined };
-}
-export interface IUserItem {
-  id: string;
-  text: string;
-  secondaryText: string;
-  optionalText: string;
-}
 
-export default class UiControls extends React.Component<IUiControlsProps, IUiControlsState> {
+let _items: IDemoItem[] = [];
+let _Drpitems: IDrpItem[] = [];
+let _columns: IColumn[] = [];
 
+export default class UiControls extends React.Component<IUiControlsProps & IDemoItem, IUiControlsState & IDetailsListDemoExampleState> {
   private _basicDropdown = React.createRef<IDropdown>();
-
-  public constructor(props: IUiControlsProps, state: IUiControlsState) {
+  public constructor(props, state: IUiControlsState & IDetailsListDemoExampleState) {
     super(props);
+
+    // define the column for Detail list data.
+    _columns = [
+      {
+        key: 'column1',
+        name: 'ID',
+        fieldName: 'ID',
+        minWidth: 70,
+        maxWidth: 90,
+        isRowHeader: true,
+        isResizable: true,
+        isSorted: true,
+        isSortedDescending: false,
+        data: 'string',
+        isPadded: true,
+        onRender: (item: IDemoItem) => {
+          return <span>{item.ID}</span>;
+        }
+      },
+      {
+        key: 'column2',
+        name: 'Title',
+        fieldName: 'Title',
+        minWidth: 70,
+        maxWidth: 90,
+        isResizable: true,
+        data: 'number',
+        isPadded: true,
+        onRender: (item: IDemoItem) => {
+          return <span>{item.Title}</span>;
+        }
+      },
+      {
+        key: 'column3',
+        name: 'Status',
+        fieldName: 'Status',
+        minWidth: 70,
+        maxWidth: 90,
+        isResizable: true,
+        data: 'string',
+        isPadded: true,
+        onRender: (item: IDemoItem) => {
+          return <span>{item.Status}</span>;
+        }
+      },
+      {
+        key: 'column4',
+        name: '',
+        fieldName: 'Delete',
+        minWidth: 70,
+        maxWidth: 90,
+        isResizable: true,
+        data: 'string',
+        isPadded: true,
+        onRender: (item: IDemoItem) => {
+          return <DefaultButton
+            data-automation-id="test"
+            text="Delete"
+            onClick={(e) => this.onbtndeleteclick(item.ID)} />;
+        }
+      }
+    ]
+
+
     this.state = {
       PeopickerItems: [],
       Title: "",
-      selectedItem: undefined
+      selectedItem: undefined,
+      items: _items, // the state is coming from Detail Demo Example State
+      columns: _columns,
+      isModalSelection: false,
+      isCompactMode: false,
+      DrpItems: _Drpitems
     };
+
+    // Init the bind object of state.
     this._getPeoplePickerItems = this._getPeoplePickerItems.bind(this);
     this.changeState = this.changeState.bind(this);
+    this.onbtnclick = this.onbtnclick.bind(this);
+    this.onbtndeleteclick = this.onbtndeleteclick.bind(this);
+
   }
 
-  public render(): React.ReactElement<IUiControlsProps> {
+  public render(): React.ReactElement<IUiControlsProps & IDemoItem> {
+
+    const { columns, isCompactMode, items, isModalSelection, DrpItems } = this.state;
+
     return (
       <div className="ms-Grid">
         <div className="ms-Grid-row">
@@ -61,36 +135,57 @@ export default class UiControls extends React.Component<IUiControlsProps, IUiCon
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
             <Dropdown
-              label="Basic uncontrolled example:"
+              label="Status:"
               id="drpcolumn"
+              defaultSelectedKey = ""
               onChanged={(e) => this.changeState(e)}
-              options={[
-                { key: 'A', text: 'Option a' },
-                { key: 'B', text: 'Option b' },
-                { key: 'C', text: 'Option c' },
-                { key: 'D', text: 'Option d' },
-                { key: 'E', text: 'Option e' },
-                { key: 'F', text: 'Option f' },
-                { key: 'G', text: 'Option g' }
-              ]}
+              options={DrpItems}
             />
           </div>
         </div>
 
         <div className="ms-Grid-row">
-          <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
+          <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg12">
+          <br />
             <DefaultButton
-              data-automation-id="test"
-              text="Get Values"
+              data-automation-id="SubmitRecord"
+              text="Submit Records"
               onClick={(e) => this.onbtnclick(e)} />
 
           </div>
         </div>
 
+        <br />
+        <br />
 
+        <div className="ms-Grid-row">
+          <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
+            <TextField label="Filter by Title:" onChanged={(e) => this._onChangeFilter(e)} />
+          </div>
+        </div>
+
+
+
+        <div className="ms-Grid-row">
+          <div className="ms-Grid-col ms-sm6 ms-md12 ms-lg12">
+
+            <DetailsList
+              items={items}
+              compact={isCompactMode}
+              columns={columns}
+              selectionMode={isModalSelection ? SelectionMode.multiple : SelectionMode.none}
+              setKey="set"
+              layoutMode={DetailsListLayoutMode.justified}
+              isHeaderVisible={true}
+              //selection={this._selection}
+              selectionPreservedOnEmptyClick={true}
+              enterModalSelectionOnTouch={true}
+              ariaLabelForSelectionColumn="Toggle selection"
+              ariaLabelForSelectAllCheckbox="Toggle selection for all items"
+            />
+          </div>
+        </div>
       </div>
-
-
     );
   }
 
@@ -98,12 +193,95 @@ export default class UiControls extends React.Component<IUiControlsProps, IUiCon
   public onbtnclick(obj): any {
     console.log(this.state.selectedItem);
     console.log(this.state.PeopickerItems);
+    this._createDemoItem();
+    
   }
 
-  // public changeState(item): any {
-  //   console.log('here is the things updating...' + item.key + ' ' + item.text + ' ' + item.selected);
-  //   this.setState({ selectedItem: item });
-  // }
+  private Cleancontroldata(){
+    this.setState({ 
+      Title: "",
+      PeopickerItems: [],
+      selectedItem: undefined,
+    })
+  }
+
+  private _onChangeFilter = (text: string): void => {
+    this.setState({ items: text ? _items.filter(i => i.Title.toLowerCase().indexOf(text.toLowerCase()) > -1 || i.Status.toLowerCase().indexOf(text.toLowerCase()) > -1) : _items });
+  };
+
+  public onbtndeleteclick(ItemID: number): any {
+    sp.web.lists.getByTitle("Demo Details").items.getById(ItemID).delete().then(data => {
+      this._getAllDemoItems();
+      
+    })
+  }
+
+  public componentWillMount() {
+    this._getStatusChoiceData();
+    if (_items.length === 0) {
+      this._getAllDemoItems();
+    }
+  }
+
+  private _createDemoItem() {
+    sp.web.lists.getByTitle("Demo Details").items.add(
+      {
+        Title: this.state.Title,
+        UserId: this.state.PeopickerItems[0].id,
+        Status: this.state.selectedItem.key
+      }).then(data => {
+        
+        this._getAllDemoItems();
+        this.Cleancontroldata();
+
+      }).catch(data => {
+        console.log(data);
+      })
+  }
+
+  private _getStatusChoiceData() {
+    sp.web.lists.getByTitle("Demo Details").fields.getByInternalNameOrTitle("Status").get().then(f => {
+      _Drpitems = [];
+      for (let choice of f.Choices) {
+        var _DemoItem: IDrpItem = {
+          key: choice,
+          text: choice
+        };
+        _Drpitems.push(_DemoItem);
+        this.setState({
+          DrpItems: _Drpitems
+        })
+      }
+    });
+
+  }
+
+  private _getAllDemoItems() {
+    sp.web.lists.getByTitle("Demo Details").items.select("ID", "Title", "Status").getAll()
+      .then((items: IDemoItem[]) => {
+        if (items.length > 0) {
+          _items = [];
+          for (let item of items) {
+            var _DemoItem: IDemoItem = {
+              ID: item["ID"],
+              Title: item["Title"],
+              Status: item["Status"]
+            };
+            _items.push(_DemoItem);
+          }
+          console.log(_items);
+          this.setState({
+            items: _items
+          })
+          return (this.state.items);
+        }
+        else {
+          return null;
+        }
+      });
+  }
+
+
   public changeState = (item: IDropdownOption): void => {
     //console.log('here is the things updating...' + item.key + ' ' + item.text + ' ' + item.selected);
     this.setState({ selectedItem: item });
