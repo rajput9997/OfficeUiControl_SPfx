@@ -68,6 +68,19 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
       },
       {
         key: 'column4',
+        name: 'User',
+        fieldName: 'User',
+        minWidth: 70,
+        maxWidth: 90,
+        isResizable: true,
+        data: 'string',
+        isPadded: true,
+        onRender: (item: IDemoItem) => {
+          return <span>{item.UserTitle.Title}</span>;
+        }
+      },
+      {
+        key: 'column5',
         name: '',
         fieldName: 'Delete',
         minWidth: 70,
@@ -106,10 +119,30 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
   public render(): React.ReactElement<IUiControlsProps & IDemoItem> {
 
-    const { columns, isCompactMode, items, isModalSelection, DrpItems } = this.state;
+    const { columns, isCompactMode, items, isModalSelection, DrpItems,selectedItem } = this.state;
 
     return (
       <div className="ms-Grid">
+
+
+        <div className="ms-Grid-row">
+          <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
+            <TextField name="Title" label="Title" value={this.state.Title} onChanged={e => this.setState({ Title: e })} required={true} id="txtTitle" />
+          </div>
+        </div>
+
+        <div className="ms-Grid-row">
+          <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
+            <Dropdown
+              label="Status:"
+              id="drpcolumn"
+              selectedKey={ selectedItem ? selectedItem.key : undefined}
+              onChanged={(e) => this.changeState(e)}
+              options={DrpItems}
+            />
+          </div>
+        </div>
+
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
             <PeoplePicker
@@ -127,26 +160,8 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         </div>
 
         <div className="ms-Grid-row">
-          <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
-            <TextField name="Title" label="Title" value={this.state.Title} onChanged={e => this.setState({ Title: e })} required={true} id="txtTitle" />
-          </div>
-        </div>
-
-        <div className="ms-Grid-row">
-          <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
-            <Dropdown
-              label="Status:"
-              id="drpcolumn"
-              defaultSelectedKey = ""
-              onChanged={(e) => this.changeState(e)}
-              options={DrpItems}
-            />
-          </div>
-        </div>
-
-        <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg12">
-          <br />
+            <br />
             <DefaultButton
               data-automation-id="SubmitRecord"
               text="Submit Records"
@@ -194,14 +209,15 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
     console.log(this.state.selectedItem);
     console.log(this.state.PeopickerItems);
     this._createDemoItem();
-    
+
   }
 
-  private Cleancontroldata(){
-    this.setState({ 
+  private Cleancontroldata() {
+    this._getStatusChoiceData();
+    this.setState({
       Title: "",
       PeopickerItems: [],
-      selectedItem: undefined,
+      selectedItem: null,
     })
   }
 
@@ -212,7 +228,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
   public onbtndeleteclick(ItemID: number): any {
     sp.web.lists.getByTitle("Demo Details").items.getById(ItemID).delete().then(data => {
       this._getAllDemoItems();
-      
+
     })
   }
 
@@ -230,7 +246,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         UserId: this.state.PeopickerItems[0].id,
         Status: this.state.selectedItem.key
       }).then(data => {
-        
+
         this._getAllDemoItems();
         this.Cleancontroldata();
 
@@ -257,15 +273,17 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
   }
 
   private _getAllDemoItems() {
-    sp.web.lists.getByTitle("Demo Details").items.select("ID", "Title", "Status").getAll()
+    sp.web.lists.getByTitle("Demo Details").items.select("ID", "Title", "Status", "User/Title").expand("User/Title").getAll()
       .then((items: IDemoItem[]) => {
         if (items.length > 0) {
           _items = [];
           for (let item of items) {
+
             var _DemoItem: IDemoItem = {
               ID: item["ID"],
               Title: item["Title"],
-              Status: item["Status"]
+              Status: item["Status"],
+              UserTitle: item["User"]
             };
             _items.push(_DemoItem);
           }
@@ -289,7 +307,6 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
   private _getPeoplePickerItems(items: any[]) {
     var reactHandler = this;
-    console.log('Items:', items);
     let useritemcoll = items.map(a => {
       let useritem: any = {
         id: a.id,

@@ -10,6 +10,11 @@ export interface IDemoItem{
   ID:number;
   Title:string;
   Status:string;
+  UserTitle: Userdata;
+}
+
+export interface Userdata{
+  Title: string;
 }
 
 export interface IDrpItem{
