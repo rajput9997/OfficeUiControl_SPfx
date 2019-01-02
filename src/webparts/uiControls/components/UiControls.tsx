@@ -136,7 +136,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
             <Dropdown
               label="Status:"
               id="drpcolumn"
-              selectedKey={ selectedItem ? selectedItem.key : undefined}
+              selectedKey={ selectedItem ? selectedItem.key : "0"}
               onChanged={(e) => this.changeState(e)}
               options={DrpItems}
             />
@@ -217,7 +217,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
     this.setState({
       Title: "",
       PeopickerItems: [],
-      selectedItem: null,
+      selectedItem : undefined,
     })
   }
 
@@ -258,6 +258,13 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
   private _getStatusChoiceData() {
     sp.web.lists.getByTitle("Demo Details").fields.getByInternalNameOrTitle("Status").get().then(f => {
       _Drpitems = [];
+
+      var _DemoItem: IDrpItem = {
+        key: "0",
+        text: "-- Select --"
+      };
+      _Drpitems.push(_DemoItem);
+
       for (let choice of f.Choices) {
         var _DemoItem: IDrpItem = {
           key: choice,
