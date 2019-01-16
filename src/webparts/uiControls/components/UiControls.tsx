@@ -7,10 +7,10 @@ import { escape } from '@microsoft/sp-lodash-subset';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import {
   DefaultButton, TextField, Dropdown, IDropdown, DropdownMenuItemType, IDropdownOption, BaseComponent,
-  DetailsList, DetailsListLayoutMode, Selection, SelectionMode, IColumn
+  DetailsList, DetailsListLayoutMode, Selection, SelectionMode, IColumn,
+  IPersonaProps, Icon
 } from 'office-ui-fabric-react';
 import { sp, Web } from "@pnp/sp";
-
 
 
 let _items: IDemoItem[] = [];
@@ -18,7 +18,9 @@ let _Drpitems: IDrpItem[] = [];
 let _columns: IColumn[] = [];
 
 export default class UiControls extends React.Component<IUiControlsProps & IDemoItem, IUiControlsState & IDetailsListDemoExampleState> {
+  private _selection: Selection;
   private _basicDropdown = React.createRef<IDropdown>();
+
   public constructor(props, state: IUiControlsState & IDetailsListDemoExampleState) {
     super(props);
 
@@ -89,13 +91,21 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         data: 'string',
         isPadded: true,
         onRender: (item: IDemoItem) => {
-          return <DefaultButton
+          return <DefaultButton className={styles.btnOverride}
             data-automation-id="test"
-            text="Delete"
-            onClick={(e) => this.onbtndeleteclick(item.ID)} />;
+            onClick={(e) => this.onbtndeleteclick(item.ID)}><Icon iconName="Delete" /></DefaultButton>;
         }
       }
     ]
+
+    this._selection = new Selection({
+      onSelectionChanged: () => {
+        this.setState({
+          selectionDetails: this._getSelectionDetails()
+        });
+      }
+    });
+
 
 
     this.state = {
@@ -104,9 +114,11 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
       selectedItem: undefined,
       items: _items, // the state is coming from Detail Demo Example State
       columns: _columns,
-      isModalSelection: false,
+      isModalSelection: true,
       isCompactMode: false,
-      DrpItems: _Drpitems
+      selectionDetails: this._getSelectionDetails(),
+      DrpItems: _Drpitems,
+      defaultPickerItem: []
     };
 
     // Init the bind object of state.
@@ -119,7 +131,9 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
   public render(): React.ReactElement<IUiControlsProps & IDemoItem> {
 
-    const { columns, isCompactMode, items, isModalSelection, DrpItems,selectedItem } = this.state;
+    const { columns, isCompactMode, items, isModalSelection, selectionDetails, DrpItems, selectedItem, PeopickerItems, defaultPickerItem } = this.state;
+
+    console.log(PeopickerItems);
 
     return (
       <div className="ms-Grid">
@@ -136,7 +150,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
             <Dropdown
               label="Status:"
               id="drpcolumn"
-              selectedKey={ selectedItem ? selectedItem.key : "0"}
+              selectedKey={selectedItem ? selectedItem.key : "0"}
               onChanged={(e) => this.changeState(e)}
               options={DrpItems}
             />
@@ -153,7 +167,8 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
               showtooltip={true}
               isRequired={true}
               disabled={false}
-              selectedItems={this._getPeoplePickerItems}
+              defaultSelectedUsers={defaultPickerItem}
+              selectedItems={PeopickerItems ? this._getPeoplePickerItems : undefined}
               showHiddenInUI={false}
               principleTypes={[PrincipalType.User]} />
           </div>
@@ -192,7 +207,8 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
               setKey="set"
               layoutMode={DetailsListLayoutMode.justified}
               isHeaderVisible={true}
-              //selection={this._selection}
+              selection={this._selection}
+              onItemInvoked={this._onItemInvoked}
               selectionPreservedOnEmptyClick={true}
               enterModalSelectionOnTouch={true}
               ariaLabelForSelectionColumn="Toggle selection"
@@ -212,12 +228,29 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
   }
 
+  private _getSelectionDetails(): string {
+    const selectionCount = this._selection.getSelectedCount();
+    switch (selectionCount) {
+      case 0:
+        return 'No items selected';
+      case 1:
+        return '1 item selected: ' + (this._selection.getSelection()[0] as any).name;
+      default:
+        return `${selectionCount} items selected`;
+    }
+  }
+
+  private _onItemInvoked(item: any): void {
+    alert(`Item invoked: ${item.ID}`);
+  }
+
   private Cleancontroldata() {
     this._getStatusChoiceData();
     this.setState({
       Title: "",
-      PeopickerItems: [],
-      selectedItem : undefined,
+      PeopickerItems: undefined,
+      selectedItem: undefined,
+      defaultPickerItem: []
     })
   }
 
@@ -313,6 +346,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
   };
 
   private _getPeoplePickerItems(items: any[]) {
+    console.log(items);
     var reactHandler = this;
     let useritemcoll = items.map(a => {
       let useritem: any = {

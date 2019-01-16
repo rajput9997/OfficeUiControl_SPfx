@@ -1,11 +1,12 @@
 import { IUiControlsProps, IDemoItem, IDrpItem } from './IUiControlsProps';
-import { DetailsList, DetailsListLayoutMode, Selection, SelectionMode, IColumn } from 'office-ui-fabric-react';
+import { DetailsList, DetailsListLayoutMode, Selection, SelectionMode, IColumn, IPersonaProps } from 'office-ui-fabric-react';
 
 export interface IUiControlsState {
     PeopickerItems: IUserItem[];
     Title: string;
     selectedItem?: { key: string | number | undefined };
-    DrpItems: IDrpItem[]
+    DrpItems: IDrpItem[];
+    defaultPickerItem?: string[];
   }
 
   export interface IUserItem {
@@ -21,4 +22,5 @@ export interface IUiControlsState {
     items: IDemoItem[];
     isModalSelection: boolean;
     isCompactMode: boolean;
+    selectionDetails: string;
 }
