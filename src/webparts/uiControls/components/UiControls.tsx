@@ -11,6 +11,7 @@ import {
   IPersonaProps, Icon
 } from 'office-ui-fabric-react';
 import { sp, Web } from "@pnp/sp";
+import SubmitForms from "./SubmitForms"
 
 
 let _items: IDemoItem[] = [];
@@ -126,7 +127,8 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
     this.changeState = this.changeState.bind(this);
     this.onbtnclick = this.onbtnclick.bind(this);
     this.onbtndeleteclick = this.onbtndeleteclick.bind(this);
-
+    this._getAllDemoItems1 = this._getAllDemoItems1.bind(this);
+    this.Cleancontroldata = this.Cleancontroldata.bind(this);
   }
 
   public render(): React.ReactElement<IUiControlsProps & IDemoItem> {
@@ -137,6 +139,8 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
     return (
       <div className="ms-Grid">
+
+        {/* <SubmitForms {...this.props} _createDemoItem={this._createDemoItem} /> */}
 
 
         <div className="ms-Grid-row">
@@ -162,7 +166,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
             <PeoplePicker
               context={this.props.context}
               titleText=""
-              personSelectionLimit={3}
+              personSelectionLimit={1}
               groupName="" // Leave this blank in case you want to filter from all users
               showtooltip={true}
               isRequired={true}
@@ -193,12 +197,8 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
             <TextField label="Filter by Title:" onChanged={(e) => this._onChangeFilter(e)} />
           </div>
         </div>
-
-
-
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-sm6 ms-md12 ms-lg12">
-
             <DetailsList
               items={items}
               compact={isCompactMode}
@@ -222,10 +222,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
 
   public onbtnclick(obj): any {
-    console.log(this.state.selectedItem);
-    console.log(this.state.PeopickerItems);
-    this._createDemoItem();
-
+     this._createDemoItem(null);
   }
 
   private _getSelectionDetails(): string {
@@ -260,7 +257,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
   public onbtndeleteclick(ItemID: number): any {
     sp.web.lists.getByTitle("Demo Details").items.getById(ItemID).delete().then(data => {
-      this._getAllDemoItems();
+      this._getAllDemoItems1();
 
     })
   }
@@ -268,19 +265,24 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
   public componentWillMount() {
     this._getStatusChoiceData();
     if (_items.length === 0) {
-      this._getAllDemoItems();
+      this._getAllDemoItems1();
     }
   }
 
-  private _createDemoItem() {
+  public _createDemoItem(postbackdata) {
+
+    console.log(postbackdata);
     sp.web.lists.getByTitle("Demo Details").items.add(
       {
+        // Title: postbackdata.Title,
+        // UserId: postbackdata.PeopickerItems[0].id,
+        // Status: postbackdata.selectedItem.key
         Title: this.state.Title,
         UserId: this.state.PeopickerItems[0].id,
         Status: this.state.selectedItem.key
       }).then(data => {
 
-        this._getAllDemoItems();
+        this._getAllDemoItems1();
         this.Cleancontroldata();
 
       }).catch(data => {
@@ -312,7 +314,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
   }
 
-  private _getAllDemoItems() {
+  public _getAllDemoItems1() {
     sp.web.lists.getByTitle("Demo Details").items.select("ID", "Title", "Status", "User/Title").expand("User/Title").getAll()
       .then((items: IDemoItem[]) => {
         if (items.length > 0) {
@@ -341,7 +343,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
 
   public changeState = (item: IDropdownOption): void => {
-    //console.log('here is the things updating...' + item.key + ' ' + item.text + ' ' + item.selected);
+    console.log('here is the things updating...' + item.key + ' ' + item.text + ' ' + item.selected);
     this.setState({ selectedItem: item });
   };
 

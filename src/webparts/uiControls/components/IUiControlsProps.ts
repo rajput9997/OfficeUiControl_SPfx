@@ -3,6 +3,7 @@
 export interface IUiControlsProps {
   description: string;
   context:any;
+  _createDemoItem:any;
 }
 
 export interface IDemoItem{
