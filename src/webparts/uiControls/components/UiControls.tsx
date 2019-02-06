@@ -8,11 +8,10 @@ import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/People
 import {
   DefaultButton, TextField, Dropdown, IDropdown, DropdownMenuItemType, IDropdownOption, BaseComponent,
   DetailsList, DetailsListLayoutMode, Selection, SelectionMode, IColumn,
-  IPersonaProps, Icon
+  IPersonaProps, Icon,
+  Dialog, DialogType, DialogFooter, PrimaryButton
 } from 'office-ui-fabric-react';
 import { sp, Web } from "@pnp/sp";
-import SubmitForms from "./SubmitForms"
-
 
 let _items: IDemoItem[] = [];
 let _Drpitems: IDrpItem[] = [];
@@ -112,6 +111,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
     this.state = {
       PeopickerItems: [],
       Title: "",
+      ID: 0,
       selectedItem: undefined,
       items: _items, // the state is coming from Detail Demo Example State
       columns: _columns,
@@ -119,7 +119,8 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
       isCompactMode: false,
       selectionDetails: this._getSelectionDetails(),
       DrpItems: _Drpitems,
-      defaultPickerItem: []
+      defaultPickerItem: [],
+      hideDialog: true
     };
 
     // Init the bind object of state.
@@ -128,27 +129,22 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
     this.onbtnclick = this.onbtnclick.bind(this);
     this.onbtndeleteclick = this.onbtndeleteclick.bind(this);
     this._getAllDemoItems1 = this._getAllDemoItems1.bind(this);
-    this.Cleancontroldata = this.Cleancontroldata.bind(this);
+    this.Clearcontroldata = this.Clearcontroldata.bind(this);
+    this._showDialog = this._showDialog.bind(this);
+    this._closeDialog = this._closeDialog.bind(this);
+    this._onItemInvoked = this._onItemInvoked.bind(this);
   }
 
   public render(): React.ReactElement<IUiControlsProps & IDemoItem> {
-
     const { columns, isCompactMode, items, isModalSelection, selectionDetails, DrpItems, selectedItem, PeopickerItems, defaultPickerItem } = this.state;
-
-    console.log(PeopickerItems);
 
     return (
       <div className="ms-Grid">
-
-        {/* <SubmitForms {...this.props} _createDemoItem={this._createDemoItem} /> */}
-
-
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
             <TextField name="Title" label="Title" value={this.state.Title} onChanged={e => this.setState({ Title: e })} required={true} id="txtTitle" />
           </div>
         </div>
-
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg10">
             <Dropdown
@@ -168,12 +164,11 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
               titleText=""
               personSelectionLimit={1}
               groupName="" // Leave this blank in case you want to filter from all users
-              showtooltip={true}
+              showtooltip={false}
               isRequired={true}
               disabled={false}
               defaultSelectedUsers={defaultPickerItem}
               selectedItems={PeopickerItems ? this._getPeoplePickerItems : undefined}
-              showHiddenInUI={false}
               principleTypes={[PrincipalType.User]} />
           </div>
         </div>
@@ -181,11 +176,11 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-sm6 ms-md8 ms-lg12">
             <br />
-            <DefaultButton
+            <PrimaryButton
               data-automation-id="SubmitRecord"
-              text="Submit Records"
+              text="Save"
               onClick={(e) => this.onbtnclick(e)} />
-
+            <DefaultButton text="Cancel" onClick={(e) => this.Clearcontroldata()} />
           </div>
         </div>
 
@@ -222,8 +217,16 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
 
   public onbtnclick(obj): any {
-     this._createDemoItem(null);
+    this._createDemoItem(null);
   }
+
+  private _showDialog = (): void => {
+    this.setState({ hideDialog: false });
+  };
+
+  private _closeDialog = (): void => {
+    this.setState({ hideDialog: true });
+  };
 
   private _getSelectionDetails(): string {
     const selectionCount = this._selection.getSelectedCount();
@@ -237,31 +240,54 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
     }
   }
 
+  /// Item Invoked based on double clicked on Details list.
   private _onItemInvoked(item: any): void {
-    alert(`Item invoked: ${item.ID}`);
-  }
+    let drpselectedItem: IDropdownOption = {
+      key: item.Status,
+      text: item.Status,
+      selected: true
+    }
+    let useritem: any = {
+      id: item.UserTitle.ID,
+      text: item.UserTitle.Title,
+      optionalText: "",
+      secondaryText: item.UserTitle.Title
+    };
 
-  private Cleancontroldata() {
-    this._getStatusChoiceData();
     this.setState({
-      Title: "",
-      PeopickerItems: undefined,
-      selectedItem: undefined,
-      defaultPickerItem: []
+      Title: item.Title,
+      ID: item.ID,
+      selectedItem: drpselectedItem,
+      PeopickerItems: [useritem],
+      defaultPickerItem: [item.UserTitle.Title]
     })
   }
 
+  // The Clear the controls data after Submitted.
+  private Clearcontroldata() {
+    this._getStatusChoiceData();
+    this.setState({
+      Title: "",
+      ID: 0,
+      PeopickerItems: undefined,
+      selectedItem: undefined,
+      defaultPickerItem: undefined
+    })
+  }
+
+  // It is bind on Dropdown OnChange control.
   private _onChangeFilter = (text: string): void => {
     this.setState({ items: text ? _items.filter(i => i.Title.toLowerCase().indexOf(text.toLowerCase()) > -1 || i.Status.toLowerCase().indexOf(text.toLowerCase()) > -1) : _items });
   };
 
+  // Delete the selected item and refresh the details list data.
   public onbtndeleteclick(ItemID: number): any {
-    sp.web.lists.getByTitle("Demo Details").items.getById(ItemID).delete().then(data => {
+    sp.web.lists.getByTitle(this.props.listName).items.getById(ItemID).delete().then(data => {
       this._getAllDemoItems1();
-
     })
   }
 
+  // Update the component data after render.
   public componentWillMount() {
     this._getStatusChoiceData();
     if (_items.length === 0) {
@@ -269,37 +295,58 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
     }
   }
 
-  public _createDemoItem(postbackdata) {
+  public componentDidUpdate(nextProps: IUiControlsProps) {
+    console.log(nextProps)
+    if (nextProps.listName !== this.props.listName) {
+      this._getStatusChoiceData();
+      this._getAllDemoItems1();
+    }
+  }
 
-    console.log(postbackdata);
-    sp.web.lists.getByTitle("Demo Details").items.add(
+  // Create or update Demo item.
+  public _createDemoItem(postbackdata) {
+    if (this.state.ID != 0) {
+      this._updateDemoItem(this.state.ID);
+      return;
+    }
+    sp.web.lists.getByTitle(this.props.listName).items.add(
       {
-        // Title: postbackdata.Title,
-        // UserId: postbackdata.PeopickerItems[0].id,
-        // Status: postbackdata.selectedItem.key
         Title: this.state.Title,
         UserId: this.state.PeopickerItems[0].id,
         Status: this.state.selectedItem.key
       }).then(data => {
 
         this._getAllDemoItems1();
-        this.Cleancontroldata();
+        this.Clearcontroldata();
 
       }).catch(data => {
         console.log(data);
-      })
+      });
   }
 
+  //the update the selected item from Details list.
+  private _updateDemoItem = (itemID: number): void => {
+    console.log(this.state.PeopickerItems);
+    sp.web.lists.getByTitle(this.props.listName).items.getById(itemID).update({
+      Title: this.state.Title,
+      UserId: this.state.PeopickerItems[0].id,
+      Status: this.state.selectedItem.key
+    }).then(data => {
+
+      this._getAllDemoItems1();
+      this.Clearcontroldata();
+
+    }).catch(data => {
+      console.log(data);
+    });
+  };
+
+  // bind the Choice data into Dropdown control.
   private _getStatusChoiceData() {
-    sp.web.lists.getByTitle("Demo Details").fields.getByInternalNameOrTitle("Status").get().then(f => {
+    sp.web.lists.getByTitle(this.props.listName).fields.getByInternalNameOrTitle("Status").get().then(f => {
       _Drpitems = [];
-
-      var _DemoItem: IDrpItem = {
-        key: "0",
-        text: "-- Select --"
-      };
+      var _DemoItem: IDrpItem = { key: "0", text: "-- Select --" };
       _Drpitems.push(_DemoItem);
-
       for (let choice of f.Choices) {
         var _DemoItem: IDrpItem = {
           key: choice,
@@ -311,11 +358,11 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         })
       }
     });
-
   }
 
+  // Get the all the list item from list by pnpjs library.
   public _getAllDemoItems1() {
-    sp.web.lists.getByTitle("Demo Details").items.select("ID", "Title", "Status", "User/Title").expand("User/Title").getAll()
+    sp.web.lists.getByTitle(this.props.listName).items.select("ID", "Title", "Status", "User/Title", "User/ID", "User/Name").expand("User").getAll()
       .then((items: IDemoItem[]) => {
         if (items.length > 0) {
           _items = [];
@@ -329,7 +376,6 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
             };
             _items.push(_DemoItem);
           }
-          console.log(_items);
           this.setState({
             items: _items
           })
@@ -338,17 +384,20 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         else {
           return null;
         }
+      }).catch((data:IDemoItem[]) => {
+        this.setState({
+          items: []
+        })
       });
   }
 
-
+  // Dropdown onchange, we've set the selected state object.
   public changeState = (item: IDropdownOption): void => {
-    console.log('here is the things updating...' + item.key + ' ' + item.text + ' ' + item.selected);
     this.setState({ selectedItem: item });
   };
 
+  //Initialize all the People picker users.
   private _getPeoplePickerItems(items: any[]) {
-    console.log(items);
     var reactHandler = this;
     let useritemcoll = items.map(a => {
       let useritem: any = {

@@ -20,7 +20,7 @@
     "description": { "default": "UiControls description" },
     "officeFabricIconFontName": "Page",
     "properties": {
-      "description": "UiControls"
+      "listName": "Demo Details"
     }
   }]
 }

@@ -7,6 +7,7 @@ export interface IUiControlsState {
     selectedItem?: { key: string | number | undefined };
     DrpItems: IDrpItem[];
     defaultPickerItem?: string[];
+    ID: number;
   }
 
   export interface IUserItem {
@@ -23,4 +24,5 @@ export interface IUiControlsState {
     isModalSelection: boolean;
     isCompactMode: boolean;
     selectionDetails: string;
+    hideDialog:boolean;
 }

@@ -14,7 +14,7 @@ import { SPComponentLoader } from '@microsoft/sp-loader';
 import { sp, Web } from "@pnp/sp";
 
 export interface IUiControlsWebPartProps {
-  description: string;
+  listName: string;
 }
 
 export default class UiControlsWebPart extends BaseClientSideWebPart<IUiControlsWebPartProps> {
@@ -22,19 +22,17 @@ export default class UiControlsWebPart extends BaseClientSideWebPart<IUiControls
   public onInit(): Promise<void> {
     let cssURL = "https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/9.6.1/css/fabric.min.css";
     SPComponentLoader.loadCss(cssURL);
-
     sp.setup({
       spfxContext: this.context
     });
-
     return Promise.resolve<void>();
   }
 
   public render(): void {
-    const element: React.ReactElement<IUiControlsProps > = React.createElement(
+    const element: React.ReactElement<IUiControlsProps> = React.createElement(
       UiControls,
       {
-        description: this.properties.description,
+        listName: this.properties.listName,
         context: this.context        //context: this.context
       }
     );
@@ -61,8 +59,8 @@ export default class UiControlsWebPart extends BaseClientSideWebPart<IUiControls
             {
               groupName: strings.BasicGroupName,
               groupFields: [
-                PropertyPaneTextField('description', {
-                  label: strings.DescriptionFieldLabel
+                PropertyPaneTextField('listName', {
+                  label: "List Title"
                 })
               ]
             }

@@ -26,6 +26,7 @@ export default class SubmitForms extends React.Component<IUiControlsProps, IUiCo
             PeopickerItems: [],
             Title: "",
             selectedItem: undefined,
+            ID:0,
             //selectionDetails: this._getSelectionDetails(),
             DrpItems: _Drpitems,
             defaultPickerItem: []

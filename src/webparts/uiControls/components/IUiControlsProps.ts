@@ -1,7 +1,5 @@
-
-
 export interface IUiControlsProps {
-  description: string;
+  listName: string;
   context:any;
   _createDemoItem:any;
 }
