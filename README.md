@@ -8,7 +8,7 @@ This Solution is contains following [Office-UI-Febric Components](https://develo
 * Basic Input Component(Textbox, button)
 * People Picker Control
 * Dropdown Control
-* Details List Control
+* Details List Component with Sorting and Filtering Functionality.
 
 ## Applies to
 
