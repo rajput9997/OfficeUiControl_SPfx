@@ -30,14 +30,15 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         key: 'column1',
         name: 'ID',
         fieldName: 'ID',
-        minWidth: 70,
-        maxWidth: 90,
+        minWidth: 30,
+        maxWidth: 30,
         isRowHeader: true,
         isResizable: true,
-        isSorted: true,
+        isSorted: false,
         isSortedDescending: false,
         data: 'string',
         isPadded: true,
+        onColumnClick: this._onColumnClick,
         onRender: (item: IDemoItem) => {
           return <span>{item.ID}</span>;
         }
@@ -46,11 +47,12 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         key: 'column2',
         name: 'Title',
         fieldName: 'Title',
-        minWidth: 70,
-        maxWidth: 90,
+        minWidth: 120,
+        maxWidth: 160,
         isResizable: true,
-        data: 'number',
+        data: 'string',
         isPadded: true,
+        onColumnClick: this._onColumnClick,
         onRender: (item: IDemoItem) => {
           return <span>{item.Title}</span>;
         }
@@ -64,6 +66,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         isResizable: true,
         data: 'string',
         isPadded: true,
+        onColumnClick: this._onColumnClick,
         onRender: (item: IDemoItem) => {
           return <span>{item.Status}</span>;
         }
@@ -77,6 +80,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         isResizable: true,
         data: 'string',
         isPadded: true,
+        onColumnClick: this._onColumnClick,
         onRender: (item: IDemoItem) => {
           return <span>{item.UserTitle.Title}</span>;
         }
@@ -180,7 +184,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
               data-automation-id="SubmitRecord"
               text="Save"
               onClick={(e) => this.onbtnclick(e)} />
-            <DefaultButton text="Cancel" onClick={(e) => this.Clearcontroldata()} />
+            &nbsp;&nbsp;<DefaultButton text="Cancel" onClick={(e) => this.Clearcontroldata()} />
           </div>
         </div>
 
@@ -269,7 +273,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
     this.setState({
       Title: "",
       ID: 0,
-      PeopickerItems: undefined,
+      //PeopickerItems: undefined,
       selectedItem: undefined,
       defaultPickerItem: undefined
     })
@@ -296,7 +300,6 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
   }
 
   public componentDidUpdate(nextProps: IUiControlsProps) {
-    console.log(nextProps)
     if (nextProps.listName !== this.props.listName) {
       this._getStatusChoiceData();
       this._getAllDemoItems1();
@@ -362,7 +365,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
 
   // Get the all the list item from list by pnpjs library.
   public _getAllDemoItems1() {
-    sp.web.lists.getByTitle(this.props.listName).items.select("ID", "Title", "Status", "User/Title", "User/ID", "User/Name").expand("User").getAll()
+    sp.web.lists.getByTitle(this.props.listName).items.select("ID", "Title", "Status", "User/Title", "User/ID", "User/Name").expand("User").top(100).orderBy("Modified", false).get()
       .then((items: IDemoItem[]) => {
         if (items.length > 0) {
           _items = [];
@@ -384,7 +387,7 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
         else {
           return null;
         }
-      }).catch((data:IDemoItem[]) => {
+      }).catch((data: IDemoItem[]) => {
         this.setState({
           items: []
         })
@@ -410,4 +413,34 @@ export default class UiControls extends React.Component<IUiControlsProps & IDemo
     })
     reactHandler.setState({ PeopickerItems: useritemcoll });
   }
+
+
+  private _onColumnClick = (ev: React.MouseEvent<HTMLElement>, column: IColumn): void => {
+    const { columns, items } = this.state;
+    const newColumns: IColumn[] = columns.slice();
+    const currColumn: IColumn = newColumns.filter(currCol => column.key === currCol.key)[0];
+    newColumns.forEach((newCol: IColumn) => {
+      if (newCol === currColumn) {
+        currColumn.isSortedDescending = !currColumn.isSortedDescending;
+        currColumn.isSorted = true;
+      } else {
+        newCol.isSorted = false;
+        newCol.isSortedDescending = true;
+      }
+    });
+    const newItems = this._copyAndSort(items, currColumn.fieldName!, currColumn.isSortedDescending);
+    this.setState({
+      columns: newColumns,
+      items: newItems
+    });
+  }
+
+
+public _copyAndSort<T>(items: T[], columnKey: string, isSortedDescending?: boolean): T[] {
+  const key = columnKey as keyof T;
+  return items.slice(0).sort((a: T, b: T) => ((isSortedDescending ? a[key] < b[key] : a[key] > b[key]) ? 1 : -1));
+}
+
+
+
 }
