@@ -10,6 +10,8 @@ This Solution is contains following [Office-UI-Febric Components](https://develo
 * Dropdown Control
 * Details List Component with Sorting and Filtering Functionality.
 
+![Office Febric UI Control with SPFX](https://github.com/rajput9997/OfficeUiControl_SPfx/blob/master/sharepoint/assets/OfficeFebricUiControl.gif)
+
 ## Applies to
 
 * [SharePoint Framework](https:/dev.office.com/sharepoint)
